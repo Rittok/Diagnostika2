@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'diagnostic',
+    'primary_test',
+    'intermediate_test',
+    'final_assessment',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +59,8 @@ ROOT_URLCONF = 'diagnostic_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'diagnostic' / 'templates'],
+        'DIRS': [BASE_DIR / 'diagnostic' / 'templates',
+                 BASE_DIR / 'primary_test' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

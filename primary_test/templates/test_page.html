@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block css %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключаем jQuery через CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Оформление блока с результатом */
+        .progress-bar-animated {
+            animation-duration: 2s;
+            width: 0%;
+        }
+        .result-box {
+            position: relative;
+            z-index: 1000;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .result-box h2 {
+            font-size: 2em;
+            color: #333;
+        }
+        .result-box p {
+            font-size: 1.5em;
+            color: #555;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="result-box shadow-lg p-5 rounded">
+                    <h2>Результаты тестирования</h2>
+                    <div class="mb-3">
+                        <span id="result-text" style="font-weight: bold;">Идет расчет...</span>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped bg-info progress-bar-animated" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключаем библиотеку jQuery -->
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+    <script>
+        $(document).ready(function(){
+            var percentCorrect = "{{ percent_correct }}";
+
+            $('#result-text').text('Загрузка...');
+
+            setTimeout(function() {
+                $('.progress-bar').animate({
+                    width: percentCorrect + '%',
+                }, 1500, function() {
+                    $('#result-text').text('Верно ' + percentCorrect + '%!');
+                });
+            }, 500);
+        });
+    </script>
+{% endblock %}

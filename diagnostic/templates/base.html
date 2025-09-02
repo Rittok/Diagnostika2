@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация участника{% endblock %}
+
+{% block content %}
+    <h1 class="display-4 text-center">Добро пожаловать!</h1>
+    <p class="lead text-center">Пожалуйста, заполните форму для регистрации.</p>
+
+    <div class="card mx-auto col-md-6">
+        <div class="card-body">
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ profile_form.as_p }}
+                <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

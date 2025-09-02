@@ -13,29 +13,7 @@ class ClassLevel(models.Model):
 
     def __str__(self):
         return f"{self.level}{self.letter}"
-
-class Question(models.Model):
-    text = models.TextField()
-    test_type = models.CharField(
-        max_length=20,
-        choices=[
-            ('primary', 'Первичная диагностика'),
-            ('interim', 'Промежуточная диагностика'),
-            ('final', 'Итоговая диагностика')
-        ]
-    )
-
-    def __str__(self):
-        return self.text[:50]
-
-class AnswerOption(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    option_text = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.option_text
-
+    
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100) 
@@ -49,3 +27,5 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+

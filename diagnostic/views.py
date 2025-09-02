@@ -1,62 +1,69 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.conf import settings
 from .forms import *
-from .models import *
+from .models import UserProfile
 
-def start_primary_diagnostic(request):
-    if request.method == 'POST':
-        profile_form = UserProfileForm(request.POST)
-        if profile_form.is_valid():
-            email = profile_form.cleaned_data['email']
-            first_name = profile_form.cleaned_data['first_name']
-            last_name = profile_form.cleaned_data['last_name']
-            school = profile_form.cleaned_data['school']  
-            class_level_pk = profile_form.cleaned_data['class_level']
-            class_letter = profile_form.cleaned_data['class_letter']
-
-
-            # Генерация уникального имени пользователя (можно использовать ФИО или другое правило)
-            username = f"{first_name}_{last_name}".lower()
-
-            # Создаем пользователя без пароля и email
-            new_user = User.objects.create_user(username=email, email=email, password=None)
-            school = School.objects.get(name=school)
-            school_id = school.pk
-
-            class_level = ClassLevel.objects.get(pk=class_level)
-            # Создаем профиль пользователя
-            profile = UserProfile(user=new_user, first_name=first_name, last_name=last_name,  school_id=school_id, class_level_id=class_level_pk, class_letter=class_letter)
-            profile.save()
-
-            return redirect('registration_success')
-        else:
-            context = {'profile_form': profile_form}
-            return render(request, 'start.html', context)
-    else:
-        profile_form = UserProfileForm()
-        context = {'profile_form': profile_form}
-        return render(request, 'start.html', context)
-
-def primary_diagnostic_view(request):
-    questions = Question.objects.filter(test_type='primary')[:5]
+# View для регистрации пользователя
+def registration_view(request):
+    if request.user.is_authenticated:
+        return redirect('home')  # перенаправляет зарегистрированных пользователей на главную страницу
     
     if request.method == 'POST':
-        form = TestForm(request.POST, questions=questions)
-        if form.is_valid():
-            result = {}
-            for key, value in form.cleaned_data.items():
-                answer_id = int(value)
-                result[key.split('_')[1]] = AnswerOption.objects.get(id=answer_id).is_correct
+        reg_form = RegistrationForm(request.POST)
+        if reg_form.is_valid():
+            # Сохраняем пользователя и профиль
+            user = reg_form.save(commit=False)
+            user.set_password(reg_form.cleaned_data['password'])
+            user.save()
             
-            # Сохранение результатов в БД
-            # Переход на следующую страницу или завершение теста
+            # Создаем профиль пользователя
+            profile = UserProfile(user=user)
+            profile.save()
+            
+            # Авторизуем пользователя после регистрации
+            auth_login(request, user)
+            return redirect('home')  # перенаправляем на домашнюю страницу
     else:
-        form = TestForm(questions=questions)
-        
-    context = {
-        'form': form,
-        'current_question_number': len(form.fields),
-        'total_questions': 15
-    }
-    return render(request, 'test_page.html', context)
+        reg_form = RegistrationForm()
+    
+    return render(request, 'registration/register.html', {'reg_form': reg_form})
+
+# View для входа пользователя
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('home')  # перенаправляет уже залогиненных пользователей
+    
+    if request.method == 'POST':
+        login_form = LoginForm(request.POST)
+        if login_form.is_valid():
+            username = login_form.cleaned_data['username']
+            password = login_form.cleaned_data['password']
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                auth_login(request, user)
+                return redirect('home')  # перенаправляем на домашнюю страницу
+    else:
+        login_form = LoginForm()
+    
+    return render(request, 'registration/login.html', {'login_form': login_form})
+
+# View для выхода пользователя
+@login_required(login_url='/accounts/login/')
+def logout_view(request):
+    auth_logout(request)
+    return redirect('home')  # перенаправляем обратно на главную страницу
+
+# View для редактирования профиля
+@login_required(login_url='/accounts/login/')
+def edit_profile_view(request):
+    if request.method == 'POST':
+        profile_edit_form = ProfileEditForm(instance=request.user.profile, data=request.POST)
+        if profile_edit_form.is_valid():
+            profile_edit_form.save()
+            return redirect('edit-profile-success')  # перенаправляем на успешную страницу редактирования
+    else:
+        profile_edit_form = ProfileEditForm(instance=request.user.profile)
+    
+    return render(request, 'profiles/edit_profile.html', {'profile_edit_form': profile_edit_form})
