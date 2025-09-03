@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'diagnostic_project.urls'
@@ -59,11 +60,12 @@ ROOT_URLCONF = 'diagnostic_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'diagnostic' / 'templates',
-                 BASE_DIR / 'primary_test' / 'templates'],
+        'DIRS': [BASE_DIR / 'templates',
+                 BASE_DIR / 'templates/registration',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -74,7 +76,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'diagnostic_project.wsgi.application'
 
-
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  #  стандартный бэкэнд
+    'diagnostic.authentication_backends.EmailAuthBackend',  #  новый бэкэнд
+]
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
