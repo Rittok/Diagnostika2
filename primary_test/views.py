@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from .forms import *
 from .models import *
-
+'''
 def start_primary_diagnostic(request):
     if request.method == 'POST':
         profile_form = UserProfileForm(request.POST)
@@ -32,12 +32,12 @@ def start_primary_diagnostic(request):
             return redirect('registration_success')
         else:
             context = {'profile_form': profile_form}
-            return render(request, 'start.html', context)
+            return render(request, 'test_page.html', context)
     else:
         profile_form = UserProfileForm()
         context = {'profile_form': profile_form}
         return render(request, 'start.html', context)
-
+'''
 def primary_diagnostic_view(request):
     questions = Question.objects.filter(test_type='primary')[:5]
     
@@ -70,3 +70,7 @@ def diagnostic_results(request, percent):
         'percent_correct': percent
     }
     return render(request, 'results.html', context)
+'''
+def test_page_view(request):
+    return render(request, 'primary_test/test_page.html') 
+    '''

@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'diagnostic',
-    'primary_test',
+    'primary_test.apps.PrimaryTestConfig',
     'intermediate_test',
     'final_assessment',
 ]
@@ -80,6 +80,9 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  #  стандартный бэкэнд
     'diagnostic.authentication_backends.EmailAuthBackend',  #  новый бэкэнд
 ]
+SESSION_COOKIE_NAME = 'sessionid'
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 

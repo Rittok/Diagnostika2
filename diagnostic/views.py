@@ -1,3 +1,4 @@
+# views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
@@ -6,26 +7,22 @@ from django.urls import reverse
 from .forms import *
 from .authentication_backends import EmailAuthBackend
 
-test = 'primary_test:test_page'
-# View для регистрации пользователя
 def registration_view(request):
     if request.user.is_authenticated:
-        return redirect('home')  # перенаправляет зарегистрированных пользователей на главную страницу
+        return redirect('home')  # перенаправляем на главную страницу
     
     if request.method == 'POST':
         reg_form = RegistrationForm(request.POST)
         if reg_form.is_valid():
-            # Регистрируем пользователя без пароля и создаем активный аккаунт
             new_user = reg_form.save()
             auth_login(request, new_user)
-            return redirect(reverse(test))  # Автоматически переходим на страницу теста
+            return redirect('primary_t')  # перенаправляем на страницу теста по именованному маршруту
     else:
         reg_form = RegistrationForm()
     
     return render(request, 'registration/register.html', {'reg_form': reg_form})
 
-def test_page_view(request):
-    return render(request, reverse('primary_test/test_page.html'))
+ # прямая ссылка на шаблон
 
 def login_view(request):
     if request.method == 'POST':
@@ -35,7 +32,7 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 auth_login(request, user, backend='diagnostic.authentication_backends.EmailAuthBackend')
-                return redirect(reverse(test))
+                return redirect('primary_t')  # перенаправляем на страницу теста по именованному маршруту
             except User.DoesNotExist:
                 form.add_error(None, "Пользователь с такой почтой не найден!")
     else:
@@ -48,4 +45,3 @@ def login_view(request):
 def logout_view(request):
     auth_logout(request)
     return redirect('home')
-
