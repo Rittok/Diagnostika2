@@ -26,9 +26,14 @@ SECRET_KEY = 'django-insecure-kgtdb4l7slya7^io_y^h-)cu3_a#x7+i*d^d)yd+)*nrr*)nh^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+'''
+# settings.py
+DEBUG = False
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-
+# Добавьте обработчик ошибок
+HANDLER404 = 'your_app.views.handler404'
+'''
 # Application definition
 
 INSTALLED_APPS = [
@@ -135,3 +140,4 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+#FORM_RENDERER = 'django.forms.renderers.DjangoTemplatesRenderer'

@@ -16,8 +16,7 @@ def registration_view(request):
         if reg_form.is_valid():
             new_user = reg_form.save()
             auth_login(request, new_user)
-            return render(request, 'primary_test/test_page.html')  # перенаправляем на страницу теста по именованному маршруту
-    else:
+            return redirect(reverse('primary_test:test'))  
         reg_form = RegistrationForm()
     
     return render(request, 'registration/register.html', {'reg_form': reg_form})
@@ -32,7 +31,7 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 auth_login(request, user, backend='diagnostic.authentication_backends.EmailAuthBackend')
-                return render(request, 'primary_test/templates/primary_test/test_page.html')
+                return redirect(reverse('primary_test:test')) 
             except User.DoesNotExist:
                 form.add_error(None, "Пользователь с такой почтой не найден!")
     else:
@@ -45,3 +44,8 @@ def login_view(request):
 def logout_view(request):
     auth_logout(request)
     return redirect('home')
+
+from django.shortcuts import render
+
+def handler404(request, exception):
+    return render(request, '404.html', status=404)

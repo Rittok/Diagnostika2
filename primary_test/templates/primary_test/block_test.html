@@ -1,0 +1,6 @@
+<h1>Тестирование {{ current_block }} из {{ num_blocks }}</h1>
+{{ form.as_p }}
+<input type="submit" value="Далее">
+{% if prev_block %}
+<a href="{% url 'block_test' prev_block %}">Назад</a>
+{% endif %}

@@ -3,25 +3,40 @@
 {% block title %}Прохождение теста{% endblock %}
 
 {% block content %}
-    <h1 class="display-4 text-center">Начало первичной диагностики</h1>
+    <style>
+        h1.display-4 {
+            margin-bottom: 2rem; /* Добавляем отступ внизу заголовка */
+        }
+        ul.no-bullets {
+            list-style-type: none; /* Скрываем маркеры */
+            padding-left: 0;       /* Убираем отступ слева */
+        }
+    </style>
+
+    <h1 class="display-4 text-center">Первичная диагностика</h1>
+    <p class="lead text-center mb-4">
+        Этот тест поможет проверить твои знания о разных профессиях и технологиях в сфере информационных технологий.<br>
+        Выбери один правильный вариант ответа для каждого вопроса. Удачи!
+    </p>
+
     <form method="post">
         {% csrf_token %}
-        {{ formset.management_form }}
-        {% for form in formset %}
+        {{ form.management_form }}
+        {% for field in form %}
             <div class="question">
-                <label>{{ form.instance.question.text }}:</label>
-                <ul>
-                    {% for opt in form %}
+                <label>{{ field.label }}:</label>
+                <ul class="no-bullets">
+                    {% for opt in field.field.choices %}
                         <li>
                             <label>
-                                {{ opt.tag }}
-                                {{ opt.choice_label }}
+                                <input type="radio" name="{{ field.html_name }}" value="{{ opt.0 }}">
+                                {{ opt.1 }}
                             </label>
                         </li>
                     {% endfor %}
                 </ul>
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Отправить</button>
+        <button type="submit" class="btn btn-primary">{% if current_block < num_blocks %}Далее{% else %}Отправить{% endif %}</button>
     </form>
 {% endblock %}

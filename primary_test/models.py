@@ -24,5 +24,15 @@ class AnswerOption(models.Model):
     def __str__(self):
         return self.option_text
 
+class DiagnosticResult(models.Model):    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)    
+    block_number = models.IntegerField()  # Номер текущего блока    
+    score = models.FloatField(default=0)  # Процент правильных ответов    
+    completed_at = models.DateTimeField(auto_now_add=True)
 
-
+class AnswerRecord(models.Model):    
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)    
+    selected_answer = models.ForeignKey(AnswerOption, on_delete=models.SET_NULL, null=True)    
+    is_correct = models.BooleanField(null=True)    
+    diagnostic_result = models.ForeignKey(DiagnosticResult, 
+                                          related_name="answers", on_delete=models.CASCADE)
