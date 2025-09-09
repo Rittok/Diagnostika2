@@ -60,7 +60,8 @@ ROOT_URLCONF = 'diagnostic_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates',
+        'DIRS': [BASE_DIR / 'templates/',
+                 BASE_DIR / 'templates/primary_test',
                  BASE_DIR / 'templates/registration',],
         'APP_DIRS': True,
         'OPTIONS': {

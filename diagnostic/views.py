@@ -16,7 +16,7 @@ def registration_view(request):
         if reg_form.is_valid():
             new_user = reg_form.save()
             auth_login(request, new_user)
-            return redirect('primary_t')  # перенаправляем на страницу теста по именованному маршруту
+            return render(request, 'primary_test/test_page.html')  # перенаправляем на страницу теста по именованному маршруту
     else:
         reg_form = RegistrationForm()
     
@@ -32,7 +32,7 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 auth_login(request, user, backend='diagnostic.authentication_backends.EmailAuthBackend')
-                return redirect('primary_t')  # перенаправляем на страницу теста по именованному маршруту
+                return render(request, 'primary_test/templates/primary_test/test_page.html')
             except User.DoesNotExist:
                 form.add_error(None, "Пользователь с такой почтой не найден!")
     else:
