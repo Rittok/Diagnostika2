@@ -1,21 +1,22 @@
 from django import forms
 from django.core.management.base import BaseCommand
 from django.forms import ModelChoiceField, BaseModelFormSet, RadioSelect, ValidationError, modelformset_factory
-# Импортируем модели
+from django import forms
+from diagnostic.models import *
 from .models import *
 
-
-from django import forms
-from .models import Question, AnswerOption
-
-class BlockTestForm(forms.Form):
+class PrimaryDiagnosticForm(forms.Form):
     def __init__(self, questions=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.questions = questions or []
         for idx, q in enumerate(self.questions):
             field_name = f'question_{q.id}'
             choices = [(opt.id, opt.option_text) for opt in q.options.all()]
-            self.fields[field_name] = forms.ChoiceField(label=q.text, widget=forms.RadioSelect(), choices=choices)
+            self.fields[field_name] = forms.ChoiceField(
+                label=q.text,
+                widget=forms.RadioSelect(),
+                choices=choices
+            )
 
 class AnswerForm(ModelChoiceField):
     def clean(self, value):

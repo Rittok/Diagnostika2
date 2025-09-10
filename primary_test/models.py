@@ -2,16 +2,18 @@ from django.db import models
 from django.contrib.auth.models import User
 from .models import *
 
+class Block(models.Model):
+    number = models.PositiveIntegerField(unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Блок {self.number}"
+
 class Question(models.Model):
-    text = models.TextField()
-    test_type = models.CharField(
-        max_length=20,
-        choices=[
-            ('primary', 'Первичная диагностика'),
-            ('interim', 'Промежуточная диагностика'),
-            ('final', 'Итоговая диагностика')
-        ]
-    )
+    text = models.CharField(max_length=255)
+    test_type = models.CharField(max_length=50)
+    block = models.ForeignKey(Block, on_delete=models.CASCADE, default=1)
+        #Block, on_delete=models.CASCADE, related_name='questions')
 
     def __str__(self):
         return self.text[:50]
@@ -24,11 +26,14 @@ class AnswerOption(models.Model):
     def __str__(self):
         return self.option_text
 
-class DiagnosticResult(models.Model):    
-    user = models.ForeignKey(User, on_delete=models.CASCADE)    
-    block_number = models.IntegerField()  # Номер текущего блока    
-    score = models.FloatField(default=0)  # Процент правильных ответов    
-    completed_at = models.DateTimeField(auto_now_add=True)
+class DiagnosticResult(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    block_number = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)  # Добавлено поле created_at
+    preference = models.CharField(max_length=50, blank=True, null=True)
+
+    def __str__(self):
+        return f"Результат для пользователя {self.user}, блок {self.block_number}"
 
 class AnswerRecord(models.Model):    
     question = models.ForeignKey(Question, on_delete=models.CASCADE)    

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from .models import School, ClassLevel
+from diagnostic.models import School, ClassLevel
 
 class Command(BaseCommand):
     help = 'Заполняет базу данных начальными данными'

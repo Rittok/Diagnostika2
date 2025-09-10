@@ -1,5 +1,39 @@
 from django.contrib import admin
-from .models import Question, AnswerOption
+from .models import Question, AnswerOption, DiagnosticResult, AnswerRecord, Block
 
-admin.site.register(Question)
-admin.site.register(AnswerOption)
+@admin.register(Block)
+class BlockAdmin(admin.ModelAdmin):
+    list_display = ('number', 'description')
+    ordering = ('number',)
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'test_type', 'block')
+    search_fields = ('text',)
+    list_filter = ('test_type', 'block')
+    ordering = ('block', 'id')
+
+@admin.register(AnswerOption)
+class AnswerOptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'question', 'option_text', 'is_correct')
+    list_filter = ('question', 'is_correct')
+    search_fields = ('option_text',)
+    raw_id_fields = ('question',)
+    ordering = ('question',)
+
+@admin.register(DiagnosticResult)
+class DiagnosticResultAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'block_number', 'created_at', 'preference')
+    list_filter = ('block_number', 'created_at')
+    search_fields = ('user__username', 'preference')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at',)
+    ordering = ('-created_at',)
+
+@admin.register(AnswerRecord)
+class AnswerRecordAdmin(admin.ModelAdmin):
+    list_display = ('id', 'question', 'selected_answer', 'is_correct', 'diagnostic_result')
+    list_filter = ('is_correct', 'question')
+    search_fields = ('question__text', 'selected_answer__option_text')
+    raw_id_fields = ('question', 'selected_answer', 'diagnostic_result')
+    ordering = ('question',)
