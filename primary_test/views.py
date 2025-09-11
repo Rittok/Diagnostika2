@@ -14,78 +14,49 @@ from .forms import *
 import math, random
 from collections import Counter
 
-BLOCK_SIZE = 5
+QUESTIONS_PER_PAGE = 5  # Число вопросов на странице
+
 @login_required
-def primary_diagnostic(request):
-    """
-    Начальная точка прохождения теста.
-    Отправляет пользователя на первый блок.
-    """
-    total_questions = Question.objects.count()
-    num_blocks = math.ceil(total_questions / BLOCK_SIZE)
-    first_block_questions = _get_random_questions(BLOCK_SIZE)
-    request.session['current_block'] = 1
-    request.session['num_blocks'] = num_blocks
-    return redirect('block_test', block_num=1)
-
-def _get_random_questions(block_size):
-    """
-    Возвращает список случайных вопросов из указанного блока.
-    """
-    # Предположим, что текущий блок хранится в сессии
-    current_block = request.session.get('current_block', 1)
-    block = Block.objects.get(number=current_block)
-    questions = list(block.questions.all())  # Берём вопросы только из нужного блока
-    return random.sample(questions, min(len(questions), block_size))  # Выбор случайных вопросов
-
 def block_test_view(request, block_num):
-    """
-    Страница для отдельных блоков теста.
-    """
     try:
-        current_block = int(block_num)
-        session_block = request.session.get('current_block', None)
-        num_blocks = request.session.get('num_blocks', None)
-
-        if num_blocks is None:
-            raise ValueError("Количество блоков не задано!")
-
-        if not session_block or session_block != current_block:
-            raise ValueError("Неверная попытка доступа.")
-
-        next_block = current_block + 1
-        prev_block = current_block - 1
-        last_block = current_block == num_blocks
-
-        if last_block:
-            next_url = 'diagnostic_results'
-        elif next_block <= num_blocks:
-            next_url = reverse('block_test', args=(next_block,))
-        else:
-            next_url = None
-
-        if request.method == 'POST':
-            form = PrimaryDiagnosticForm(request.POST)
-            if form.is_valid():
-                results = process_block_answers(form.cleaned_data, current_block)
-                save_progress(request.user, current_block, results)
-                return HttpResponseRedirect(next_url)
-        else:
-            questions = _get_random_questions(BLOCK_SIZE)
-            form = PrimaryDiagnosticForm(questions=questions)
-
+        # Получаем текущий блок из базы данных
+        current_block = Block.objects.get(number=block_num)
+        
+        # Получаем все вопросы текущего блока и перемешиваем их
+        all_questions = list(current_block.question_set.all())
+        random.shuffle(all_questions)
+        
+        # Определяем общее число вопросов
+        total_questions = len(all_questions)
+        
+        # Берем номер страницы из GET-параметра (по умолчанию первая страница)
+        page = int(request.GET.get('page', 1))
+        
+        # Индексация вопроса начинается с нуля
+        start_question = (page - 1) * QUESTIONS_PER_PAGE
+        end_question = min(start_question + QUESTIONS_PER_PAGE, total_questions)
+        
+        # Отбираем отображаемые вопросы
+        displayed_questions = all_questions[start_question:end_question]
+        
+        # Формируем форму для выбранного набора вопросов
+        form = PrimaryDiagnosticForm(questions=displayed_questions)
+        
+        # Контекст для рендеринга страницы
         context = {
             'form': form,
-            'prev_block': prev_block if prev_block > 0 else None,
-            'next_block': next_block if next_block <= num_blocks else None,
-            'last_block': last_block,
-            'current_block': current_block,
-            'num_blocks': num_blocks
+            'current_block': block_num,
+            'page': page,
+            'total_questions': total_questions,
+            'displayed_questions': displayed_questions,
+            'num_pages': math.ceil(total_questions / QUESTIONS_PER_PAGE)
         }
+        
         return render(request, 'block_test.html', context)
     except Exception as e:
         print(e)
         return HttpResponseRedirect('/diagnostic/login')
+    
 def process_block_answers(cleaned_data, block_number):
     """
     Обработка ответов в зависимости от номера блока.

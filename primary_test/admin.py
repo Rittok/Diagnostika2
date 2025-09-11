@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Question, AnswerOption, DiagnosticResult, AnswerRecord, Block
+from diagnostic.models import School, ClassLevel
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
@@ -18,7 +19,6 @@ class AnswerOptionAdmin(admin.ModelAdmin):
     list_display = ('id', 'question', 'option_text', 'is_correct')
     list_filter = ('question', 'is_correct')
     search_fields = ('option_text',)
-    raw_id_fields = ('question',)
     ordering = ('question',)
 
 @admin.register(DiagnosticResult)
@@ -35,5 +35,14 @@ class AnswerRecordAdmin(admin.ModelAdmin):
     list_display = ('id', 'question', 'selected_answer', 'is_correct', 'diagnostic_result')
     list_filter = ('is_correct', 'question')
     search_fields = ('question__text', 'selected_answer__option_text')
-    raw_id_fields = ('question', 'selected_answer', 'diagnostic_result')
     ordering = ('question',)
+
+@admin.register(School)
+class SchoolAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+@admin.register(ClassLevel)
+class ClassLevelAdmin(admin.ModelAdmin):
+    list_display = ('level',)
+    list_filter = ('level',)

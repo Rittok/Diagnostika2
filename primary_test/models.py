@@ -9,11 +9,16 @@ class Block(models.Model):
     def __str__(self):
         return f"Блок {self.number}"
 
+TEST_TYPES = (
+    ('primary', 'Первичная диагностика'),  # Первичный ключ, читаемое имя
+    ('interim', 'Промежуточная диагностика'),
+    ('final', 'Итоговая диагностика'),
+)
+
 class Question(models.Model):
-    text = models.CharField(max_length=255)
-    test_type = models.CharField(max_length=50)
+    text = models.CharField(max_length=255, db_index=True)
+    test_type = models.CharField(max_length=50, choices=TEST_TYPES)  # Ограничиваем выбор этими типами
     block = models.ForeignKey(Block, on_delete=models.CASCADE, default=1)
-        #Block, on_delete=models.CASCADE, related_name='questions')
 
     def __str__(self):
         return self.text[:50]

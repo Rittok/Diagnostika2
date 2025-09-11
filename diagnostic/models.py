@@ -9,10 +9,10 @@ class School(models.Model):
 
 class ClassLevel(models.Model):
     level = models.IntegerField()
-    letter = models.CharField(max_length=1)
 
     def __str__(self):
-        return f"{self.level}{self.letter}"
+        return f'{self.level}'
+
     
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -28,18 +28,5 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-class Question(models.Model):
-    text = models.TextField()
-    test_type = models.CharField(
-        max_length=20,
-        choices=[
-            ('primary', 'Первичная диагностика'),
-            ('interim', 'Промежуточная диагностика'),
-            ('final', 'Итоговая диагностика')
-        ]
-    )
-
-    def __str__(self):
-        return self.text[:50]
 
 

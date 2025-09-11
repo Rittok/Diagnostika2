@@ -2,46 +2,55 @@
 
 {% block title %}Прохождение теста{% endblock %}
 
-{% block content %}    
-<style>        
-h1.display-4 {           
-     margin-bottom: 2rem; /* Добавляем отступ внизу заголовка */       
-      }       
-              ul.no-bullets {           
-                 list-style-type: none; /* Скрываем маркеры */            
-                 padding-left: 0;       /*00000 Убираем отступ слева */      
-                   }   
-</style>
-{% if current_block == 1 %}
-    <h1 class="display-4 text-center">Первичная диагностика</h1>
-    <p class="lead text-center mb-4">
-        Тест позволит оценить ваше знание профессий и технологий сферы ИТ.<br>
-        Выберите единственный верный ответ на каждый вопрос.
-    </p>
-{% else %}
-    <h1 class="display-4 text-center">Определение ваших предпочтений</h1>
-    <p class="lead text-center mb-4">
-        Во втором блоке выберите варианты, отражающие ваши личные предпочтения.
-    </p>
-{% endif %}
+{% block content %}
+    <style>
+        h1.display-4 {
+            margin-bottom: 2rem;
+        }
+        ul.no-bullets {
+            list-style-type: none;
+            padding-left: 0;
+        }
+    </style>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.management_form }}
-    {% for field in form %}
-        <div class="question">
-            <label>{{ field.label }}:</label>
-            <ul class="no-bullets">
-                {% for opt in field.field.choices %}
-                    <li>
-                        <label>
-                            <input type="radio" name="{{ field.html_name }}" value="{{ opt.0 }}">
-                            {{ opt.1 }}
-                        </label>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endfor %}
-    <button type="submit" class="btn btn-primary">{% if current_block < num_blocks %}Далее{% else %}Отправить{% endif %}</button>
-</form>
+    {% if current_block == 1 %}
+        <h1 class="display-4 text-center">Первичная диагностика</h1>
+        <p class="lead text-center mb-4">
+            Тест позволит оценить ваше знание профессий и технологий сферы ИТ.<br>
+            Выберите единственный верный ответ на каждый вопрос.
+        </p>
+    {% else %}
+        <h1 class="display-4 text-center">Определение ваших предпочтений</h1>
+        <p class="lead text-center mb-4">
+            Во втором блоке нужно выбрать варианты, отражающие ваши личные предпочтения.
+        </p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.management_form }}
+        {% for field in form %}
+            <div class="question">
+                <label>{{ field.label }}:</label>
+                <ul class="no-bullets">
+                    {% for opt in field.field.choices %}
+                        <li>
+                            <label>
+                                <input type="radio" name="{{ field.html_name }}" value="{{ opt.0 }}">
+                                {{ opt.1 }}
+                            </label>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+        <input type="hidden" name="page" value="{{ page }}"/>
+        <button type="submit" class="btn btn-primary">
+            {% if current_block < num_blocks %}
+                Далее
+            {% else %}
+                Отправить
+            {% endif %}
+        </button>
+    </form>
+{% endblock %}
