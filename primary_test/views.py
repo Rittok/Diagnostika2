@@ -23,7 +23,7 @@ def block_test_view(request, block_num):
         current_block = Block.objects.get(number=block_num)
         
         # Получаем все вопросы текущего блока и перемешиваем их
-        all_questions = list(current_block.question_set.all())
+        all_questions = Question.objects.filter(block=current_block)
         random.shuffle(all_questions)
         
         # Определяем общее число вопросов

@@ -26,31 +26,11 @@
         </p>
     {% endif %}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.management_form }}
-        {% for field in form %}
-            <div class="question">
-                <label>{{ field.label }}:</label>
-                <ul class="no-bullets">
-                    {% for opt in field.field.choices %}
-                        <li>
-                            <label>
-                                <input type="radio" name="{{ field.html_name }}" value="{{ opt.0 }}">
-                                {{ opt.1 }}
-                            </label>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endfor %}
-        <input type="hidden" name="page" value="{{ page }}"/>
-        <button type="submit" class="btn btn-primary">
-            {% if current_block < num_blocks %}
-                Далее
-            {% else %}
-                Отправить
-            {% endif %}
-        </button>
-    </form>
+    <div class="container">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}  <!-- Простой вывод всей формы -->
+            <button type="submit" class="btn btn-primary">Далее</button>
+        </form>
+    </div>
 {% endblock %}
