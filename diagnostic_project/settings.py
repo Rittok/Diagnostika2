@@ -66,8 +66,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [BASE_DIR / 'templates/',
-                 BASE_DIR / 'primary_test/templates',
-                 BASE_DIR / 'templates/registration',],
+                 BASE_DIR / 'templates/registration',
+                 BASE_DIR / 'primary_test/templates',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,4 +141,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #FORM_RENDERER = 'django.forms.renderers.DjangoTemplatesRenderer'
-LOGIN_REDIRECT_URL = '/primary_test/block/1/'
+#LOGIN_REDIRECT_URL = '/primary_test/block/1/'

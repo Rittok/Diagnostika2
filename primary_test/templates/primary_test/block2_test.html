@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Прохождение теста - Блок 2{% endblock %}
+
+{% block content %}
+<h1 class="display-4 text-center">Определение ваших предпочтений</h1>
+<p class="lead text-center mb-4">
+    Ответьте на вопросы, отражающие ваши личные предпочтения.
+</p>
+
+<form action="{% url 'primary_test:block2_test' %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Завершить</button>
+</form>
+{% endblock %}

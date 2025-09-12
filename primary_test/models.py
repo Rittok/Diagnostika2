@@ -19,12 +19,13 @@ class Question(models.Model):
     text = models.CharField(max_length=255, db_index=True)
     test_type = models.CharField(max_length=50, choices=TEST_TYPES)  # Ограничиваем выбор этими типами
     block = models.ForeignKey(Block, on_delete=models.CASCADE, default=1)
+    options = models.ManyToManyField('AnswerOption', related_name='linked_questions')
 
     def __str__(self):
         return self.text[:50]
 
 class AnswerOption(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     option_text = models.CharField(max_length=255, verbose_name="Вариант ответа")
     is_correct = models.BooleanField(default=False, verbose_name="Правильный ответ?")
 

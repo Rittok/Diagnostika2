@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Прохождение теста - Блок 1{% endblock %}
+
+{% block content %}
+<h1 class="display-4 text-center">Первичная диагностика</h1>
+<p class="lead text-center mb-4">
+    Оцените свое знание профессий и технологий сферы ИТ.<br>
+    Выберите единственный верный ответ на каждый вопрос.
+</p>
+
+<form action="{% url 'primary_test:block1_test' page=page %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Отправить</button>
+</form>
+
+<div>
+    Страница {{ page }} из {{ pages }}
+    {% if page > 1 %}
+        <a href="{% url 'primary_test:block1_test' block_num=block_num %}?page={{ page|add:'-1' }}">Назад</a>
+    {% endif %}
+    {% if page < pages %}
+        <a href="{% url 'primary_test:block1_test' block_num=block_num %}?page={{ page|add:'-1' }}">Вперед</a>
+    {% endif %}
+</div>
+{% endblock %}

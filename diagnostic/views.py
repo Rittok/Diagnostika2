@@ -14,17 +14,14 @@ def registration_view(request):
             email = reg_form.cleaned_data['email']
             user = User.objects.create_user(username=email, email=email)
             user.save()
+            
             # Автоматически авторизуем пользователя
             auth_login(request, user, backend='diagnostic.authentication_backends.EmailAuthBackend')
-            # Устанавливаем номер текущего блока
             request.session['current_block'] = 1
-            # Переадресация на первую страницу тестирования
-            return render(request,'primary_test/block_test.html',{'current_block': 1})
+            return redirect('primary_test:block1_test', page=1)
         else:
-            # Форма неверна, возвращаем страницу с ошибками
             return render(request, 'registration/register.html', {'reg_form': reg_form})
     else:
-        # Показываем пустую форму регистрации
         reg_form = RegistrationForm()
         return render(request, 'registration/register.html', {'reg_form': reg_form})
 
@@ -36,7 +33,7 @@ def login_view(request):
             try:
                 user = User.objects.get(email=email)
                 auth_login(request, user, backend='diagnostic.authentication_backends.EmailAuthBackend')
-                return render(request,'primary_test/block_test.html',{'current_block': 1})
+                return redirect('primary_test:block1_test', page=1)
             except User.DoesNotExist:
                 form.add_error(None, "Пользователь с такой почтой не найден!")
     else:

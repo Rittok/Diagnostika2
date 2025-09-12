@@ -11,11 +11,12 @@ class PrimaryDiagnosticForm(forms.Form):
         self.questions = questions or []
         for idx, q in enumerate(self.questions):
             field_name = f'question_{q.id}'
-            choices = [(opt.id, opt.option_text) for opt in q.answer_options.all()]  # Предположим, у вас есть связанный объект AnswerOptions
+            choices = [(opt.id, opt.option_text) for opt in q.options.all()]
             self.fields[field_name] = forms.ChoiceField(
                 label=q.text,
                 widget=forms.RadioSelect(),
-                choices=choices
+                choices=choices,
+                required=True
             )
 
 class AnswerForm(ModelChoiceField):
