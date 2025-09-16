@@ -4,39 +4,39 @@
 
 {% block content %}
 <div class="row justify-content-md-center">
-    <div class="col-lg-6 col-md-8">
+    <div class="col-lg-8 col-md-10">
         <h1 class="mb-4">Оценка уровня подготовки</h1>
         <p class="lead">Выберите правильные ответы на вопросы ниже:</p>
 
         <form action="{% url 'primary_test:block1_test' page=page %}" method="post">
             {% csrf_token %}
-            {% for field in form.visible_fields %}
+            {% for question, options in prepared_questions %}
                 <div class="mb-3">
-                    <label class="fw-bold" for="id_{{ field.auto_id }}">{{ field.label_tag }}</label>
+                    <label class="fw-bold">{{ question.text }}</label>
                     <div class="radio-group">
-                        {% for radio in field %}
+                        {% for option, checked in options %}
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="{{ field.html_name }}" id="{{ radio.id_for_label }}" value="{{ radio.choice_value }}"/>
-                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" {% if checked %}checked{% endif %}>
+                                <label class="form-check-label" for="option_{{ option.id }}">{{ option.option_text }}</label>
                             </div>
                         {% endfor %}
                     </div>
                 </div>
             {% endfor %}
 
-            <button type="submit" class="btn btn-success">Далее</button>
+            <hr />
+            <div class="d-flex justify-content-between align-items-center">
+                {% if page > 1 %}
+                    <a href="{% url 'primary_test:block1_test' page=page|add:'-1' %}" class="btn btn-outline-info">« Предыдущая</a>
+                {% endif %}
+                
+                {% if page < total_pages %}
+                    <button type="submit" class="btn btn-primary">Следующая</button>
+                {% else %}
+                    <button type="submit" class="btn btn-success">Отправить и перейти ко второму блоку</button>
+                {% endif %}
+            </div>
         </form>
-
-        <hr />
-        <div class="pagination d-flex justify-content-between align-items-center">
-            <span>Страница {{ page }} из {{ total_pages }}</span>
-            {% if page > 1 %}
-                <a href="{% url 'primary_test:block1_test' page=page|add:'-1' %}" class="btn btn-outline-info">« Предыдущая</a>
-            {% endif %}
-            {% if page < total_pages %}
-                <a href="{% url 'primary_test:block1_test' page=page|add:'1' %}" class="btn btn-outline-info">Следующая »</a>
-            {% endif %}
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,27 +1,35 @@
 from django.contrib import admin
 from .models import Question, AnswerOption, DiagnosticResult, AnswerRecord, Block
 from diagnostic.models import School, ClassLevel
-from .forms import AnswerOptionForm
 
+# Настройки для блока вопросов
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
     list_display = ('number', 'description')
     ordering = ('number',)
 
+# Настройки для вопросов с inline-редактированием вариантов ответов
+class AnswerOptionInline(admin.TabularInline):
+    model = AnswerOption
+    extra = 3  # Кол-во пустых полей для новых вариантов ответов
+
 @admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
+class QuestionWithAnswersAdmin(admin.ModelAdmin):
+    inlines = [AnswerOptionInline]
     list_display = ('id', 'text', 'test_type', 'block')
     search_fields = ('text',)
     list_filter = ('test_type', 'block')
     ordering = ('block', 'id')
 
+# Настройки для вариантов ответов
 @admin.register(AnswerOption)
 class AnswerOptionAdmin(admin.ModelAdmin):
-    form = AnswerOptionForm
-    list_display = ('option_text', 'question', 'is_selected')
-    list_editable = ('is_selected',)
-    list_filter = ('question',)
+    list_display = ('id', 'question', 'option_text', 'is_correct')
+    list_filter = ('question', 'is_correct')
+    search_fields = ('option_text',)
+    ordering = ('question',)
 
+# Настройки для остальных моделей
 @admin.register(DiagnosticResult)
 class DiagnosticResultAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'block_number', 'created_at', 'preference')
@@ -47,6 +55,3 @@ class SchoolAdmin(admin.ModelAdmin):
 class ClassLevelAdmin(admin.ModelAdmin):
     list_display = ('level',)
     list_filter = ('level',)
-
-
-

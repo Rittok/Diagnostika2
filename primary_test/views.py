@@ -8,71 +8,104 @@ from django.core.files.base import ContentFile
 from django.db.models import Sum
 from diagnostic.models import *
 from .models import *
-from .forms import *
 import math, random
-from collections import Counter
+from django.db.models import Subquery, OuterRef
 from django.shortcuts import get_object_or_404
 
 # Константа: количество вопросов на одну страницу
 QUESTIONS_PER_PAGE = 5
-
 @login_required
 def block1_test_view(request, page=1):
     block_obj = get_object_or_404(Block, number=1)  # Получаем объект первого блока
-    all_questions = list(Question.objects.filter(block=block_obj))  # Все вопросы первого блока
-    random.shuffle(all_questions)  # Перемешиваем вопросы
+    session_key = f"questions_order_{block_obj.number}_{request.user.id}"
+
+    # Если порядок вопросов ещё не зафиксирован, перемешиваем и сохраняем
+    if session_key not in request.session:
+        all_questions = list(Question.objects.filter(block=block_obj))
+        random.shuffle(all_questions)
+        request.session[session_key] = [q.id for q in all_questions]  # Сохраняем только идентификаторы
+
+    # Забираем упорядоченные вопросы из сессии
+    ordered_questions_ids = request.session[session_key]
+
+    # Создаем запрос с предварительным упорядочиванием
+    ordered_questions = Question.objects.filter(id__in=ordered_questions_ids).order_by()
 
     # Вычисляем общее число страниц
-    total_pages = math.ceil(len(all_questions) / QUESTIONS_PER_PAGE)
+    total_pages = math.ceil(len(ordered_questions) / QUESTIONS_PER_PAGE)
 
     # Определяем диапазон текущих вопросов
     start_idx = (page - 1) * QUESTIONS_PER_PAGE
-    end_idx = min(start_idx + QUESTIONS_PER_PAGE, len(all_questions))
-    current_questions = all_questions[start_idx:end_idx]
+    end_idx = min(start_idx + QUESTIONS_PER_PAGE, len(ordered_questions))
+    current_questions = ordered_questions[start_idx:end_idx]
 
-    # Создаем форму для текущего набора вопросов
-    form = PrimaryDiagnosticForm(questions=current_questions)
+    # Получаем выбранные ответы из сессии
+    saved_answers = request.session.get(f'saved_answers_{block_obj.number}', {})
 
+    # Подготовим готовые данные для шаблона
+    prepared_questions = []
+    for question in current_questions:
+        options = []
+        for option in question.answeroption_set.all():
+            checked = str(saved_answers.get(str(question.id), '')) == str(option.id)
+            options.append((option, checked))
+        prepared_questions.append((question, options))
+
+    # Обрабатываем форму
     if request.method == 'POST':
-        form = PrimaryDiagnosticForm(request.POST, questions=current_questions)
-        if form.is_valid():
-            cleaned_data = form.cleaned_data
-            process_block_answers(cleaned_data, block_obj, request.user)
+        for key, value in request.POST.items():
+            if key.startswith('question_'):  # Обрабатываем только вопросы
+                question_id = int(key.split('_')[1])
+                saved_answers[str(question_id)] = value
+        request.session[f'saved_answers_{block_obj.number}'] = saved_answers
 
-            # Проверяем, можем ли перейти дальше
-            next_page = page + 1
-            if next_page <= total_pages:
-                return redirect(reverse('primary_test:block1_test', args=(next_page,)))
-            else:
-                return redirect(reverse('primary_test:block2_test'))
+        # Переходим на вторую страницу
+        next_page = page + 1
+        if next_page <= total_pages:
+            return redirect(reverse('primary_test:block1_test', args=(next_page,)))
+        else:
+            return redirect(reverse('primary_test:block2_test'))
 
     context = {
-        'form': form,
+        'prepared_questions': prepared_questions,
         'page': page,
-        'total_pages': total_pages,
-        'current_questions': current_questions
+        'total_pages': total_pages
     }
     return render(request, 'primary_test/block1_test.html', context)
 
 @login_required
 def block2_test_view(request):
     block_obj = get_object_or_404(Block, number=2)  # Получаем объект второго блока
-    all_questions = list(Question.objects.filter(block=block_obj))  # Все вопросы второго блока
-    random.shuffle(all_questions)  # Перемешиваем вопросы
+    session_key = f"saved_answers_{block_obj.number}_{request.user.id}"
 
-    # Формируем форму сразу для всех вопросов
-    form = PrimaryDiagnosticForm(questions=all_questions)
+    # Получаем все вопросы второго блока
+    all_questions = list(Question.objects.filter(block=block_obj))
 
+    # Получаем выбранные ответы из сессии
+    saved_answers = request.session.get(session_key, {})
+
+    # Подготовим готовые данные для шаблона
+    prepared_questions = []
+    for question in all_questions:
+        options = []
+        for option in question.answeroption_set.all():
+            checked = str(saved_answers.get(str(question.id), '')) == str(option.id)
+            options.append((option, checked))
+        prepared_questions.append((question, options))
+
+    # Обрабатываем форму
     if request.method == 'POST':
-        form = PrimaryDiagnosticForm(request.POST, questions=all_questions)
-        if form.is_valid():
-            cleaned_data = form.cleaned_data
-            process_block_answers(cleaned_data, block_obj, request.user)
-            return redirect(reverse('primary_test:diagnostic_results'))
+        for key, value in request.POST.items():
+            if key.startswith('question_'):
+                question_id = int(key.split('_')[1])
+                saved_answers[str(question_id)] = value
+        request.session[session_key] = saved_answers
+
+        # Переходим на страницу результатов
+        return redirect(reverse('primary_test:diagnostic_results'))
 
     context = {
-        'form': form,
-        'questions': all_questions
+        'prepared_questions': prepared_questions
     }
     return render(request, 'primary_test/block2_test.html', context)
 
@@ -164,7 +197,7 @@ def diagnostic_results(request):
     """
     Итоговая страница диагностики.
     """
-    results = DiagnosticResult.objects.filter(user=request.user).order_by('-completed_at')
+    results = DiagnosticResult.objects.filter(user=request.user).order_by('-created_at')
     scores = []
     for result in results:
         if hasattr(result, 'preference'):
@@ -179,18 +212,38 @@ def diagnostic_results(request):
                 'block_number': result.block_number,
                 'percent_correct': percent_correct
             })
-    overall_score = sum([score['percent_correct'] for score in scores if 'percent_correct' in score]) / len([score for score in scores if 'percent_correct' in score])
+
+    # Расчёт общего среднего балла для блока 1
+    percent_scores = [score for score in scores if 'percent_correct' in score]
+    if percent_scores:
+        overall_score = sum(score['percent_correct'] for score in percent_scores) / len(percent_scores)
+    else:
+        overall_score = 0  # Если нет оценок, средний балл считаем нулевым
+
+    # Расчёт предпочтения для блока 2
+    second_block_results = [score for score in scores if 'preference' in score]
+    if second_block_results:
+        second_block_preference = second_block_results[0]['preference']
+    else:
+        second_block_preference = ""
+
+    # Проверяем, есть ли результаты тестирования
+    has_results = bool(scores)
+
     context = {
         'scores': scores,
-        'overall_score': overall_score
+        'overall_score': overall_score,
+        'second_block_preference': second_block_preference,
+        'has_results': has_results
     }
-    return render(request, 'results.html', context)
+    return render(request, 'primary_test/results.html', context)
+
 
 def calculate_percent_correct(answers):
     """Расчёт процентного соотношения правильных ответов."""
     total = len(answers)
     correct_count = sum([1 for ans in answers if ans.is_correct])
-    return (correct_count / total) * 100
+    return (correct_count / total) * 100 if total > 0 else 0
 
 def generate_pdf_report(user):
     """
@@ -215,18 +268,3 @@ def download_report(request, username):
     response = FileResponse(profile.report_file.open(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename={profile.report_file.name}'
     return response
-
-def select_answers(request, question_id):
-    question = Question.objects.get(id=question_id)
-    if request.method == 'POST':
-        form = MultiAnswerForm(question, request.POST)
-        if form.is_valid():
-            selected_options = form.cleaned_data['options']
-            # Обработаем полученные данные (например, сохраним отметки)
-            for option in selected_options:
-                # Логика сохранения отметок
-                pass
-            return redirect('/success/')
-    else:
-        form = MultiAnswerForm(question)
-    return render(request, 'select_answers.html', {'form': form})
