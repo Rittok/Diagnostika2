@@ -13,78 +13,75 @@ import math, random
 from collections import Counter
 from django.shortcuts import get_object_or_404
 
-QUESTIONS_PER_PAGE = 5  # Количество вопросов на одной странице
+# Константа: количество вопросов на одну страницу
+QUESTIONS_PER_PAGE = 5
 
 @login_required
 def block1_test_view(request, page=1):
-    block_obj = get_object_or_404(Block, number=1)  # Первый блок
-    all_questions = Question.objects.filter(block=block_obj)
-    random.shuffle(list(all_questions))
-    
-    # Всего 15 вопросов, показываем по 5 на страницу
-    QUESTIONS_PER_PAGE = 5
-    total_questions = len(all_questions)
-    pages = math.ceil(total_questions / QUESTIONS_PER_PAGE)
-    
-    # Текущие вопросы
-    start_question = (page - 1) * QUESTIONS_PER_PAGE
-    end_question = min(start_question + QUESTIONS_PER_PAGE, total_questions)
-    displayed_questions = all_questions[start_question:end_question]
-    
-    # Формируем форму
-    form = PrimaryDiagnosticForm(questions=displayed_questions)
-    
+    block_obj = get_object_or_404(Block, number=1)  # Получаем объект первого блока
+    all_questions = list(Question.objects.filter(block=block_obj))  # Все вопросы первого блока
+    random.shuffle(all_questions)  # Перемешиваем вопросы
+
+    # Вычисляем общее число страниц
+    total_pages = math.ceil(len(all_questions) / QUESTIONS_PER_PAGE)
+
+    # Определяем диапазон текущих вопросов
+    start_idx = (page - 1) * QUESTIONS_PER_PAGE
+    end_idx = min(start_idx + QUESTIONS_PER_PAGE, len(all_questions))
+    current_questions = all_questions[start_idx:end_idx]
+
+    # Создаем форму для текущего набора вопросов
+    form = PrimaryDiagnosticForm(questions=current_questions)
+
     if request.method == 'POST':
-        form = PrimaryDiagnosticForm(request.POST, questions=displayed_questions)
+        form = PrimaryDiagnosticForm(request.POST, questions=current_questions)
         if form.is_valid():
             cleaned_data = form.cleaned_data
-            process_block_answers(cleaned_data, block_obj)
-            
-            # Переход на следующую страницу
+            process_block_answers(cleaned_data, block_obj, request.user)
+
+            # Проверяем, можем ли перейти дальше
             next_page = page + 1
-            if next_page <= pages:
-                return redirect(reverse('primary_test:block1_test', kwargs={'page': next_page}))
+            if next_page <= total_pages:
+                return redirect(reverse('primary_test:block1_test', args=(next_page,)))
             else:
-                return redirect(reverse('primary_test:block2_test'))  # Переход ко второму блоку
-    
+                return redirect(reverse('primary_test:block2_test'))
+
     context = {
         'form': form,
         'page': page,
-        'pages': pages,
-        'displayed_questions': displayed_questions
+        'total_pages': total_pages,
+        'current_questions': current_questions
     }
     return render(request, 'primary_test/block1_test.html', context)
 
 @login_required
 def block2_test_view(request):
-    block_obj = get_object_or_404(Block, number=2)  # Второй блок
-    all_questions = Question.objects.filter(block=block_obj)
-    random.shuffle(all_questions)
-    
-    # Всё разом, ведь вопросов всего пять
-    displayed_questions = all_questions
-    
-    form = PrimaryDiagnosticForm(questions=displayed_questions)
-    
+    block_obj = get_object_or_404(Block, number=2)  # Получаем объект второго блока
+    all_questions = list(Question.objects.filter(block=block_obj))  # Все вопросы второго блока
+    random.shuffle(all_questions)  # Перемешиваем вопросы
+
+    # Формируем форму сразу для всех вопросов
+    form = PrimaryDiagnosticForm(questions=all_questions)
+
     if request.method == 'POST':
-        form = PrimaryDiagnosticForm(request.POST, questions=displayed_questions)
+        form = PrimaryDiagnosticForm(request.POST, questions=all_questions)
         if form.is_valid():
             cleaned_data = form.cleaned_data
-            process_block_answers(cleaned_data, block_obj)
-            return redirect(reverse('primary_test:diagnostic_results'))  # Переход к результатам
-    
+            process_block_answers(cleaned_data, block_obj, request.user)
+            return redirect(reverse('primary_test:diagnostic_results'))
+
     context = {
         'form': form,
-        'displayed_questions': displayed_questions
+        'questions': all_questions
     }
-    return render(request, 'block2_test.html', context)
-    
+    return render(request, 'primary_test/block2_test.html', context)
+
 def process_block_answers(cleaned_data, block_obj, user):
     """
-    Обработка ответов пользователя и сохранение результатов.
+    Сохранение результатов тестирования.
     """
     if block_obj.number == 1:
-        # Обработка первого блока (оценка знаний)
+        # Обрабатываем результаты первого блока (оценка знаний)
         results = {}
         for key, val in cleaned_data.items():
             question_id = int(key.split('_')[-1])
@@ -94,19 +91,36 @@ def process_block_answers(cleaned_data, block_obj, user):
                 'selected_answer': answer_option,
                 'is_correct': answer_option.is_correct
             }
-        save_progress(user, block_obj.number, results)
+        
+        # Сохраняем результаты
+        diagnostic_result = DiagnosticResult.objects.create(
+            user=user,
+            block_number=block_obj.number
+        )
+        for qid, data in results.items():
+            AnswerRecord.objects.create(
+                question_id=qid,
+                selected_answer=data['selected_answer'],
+                is_correct=data['is_correct'],
+                diagnostic_result=diagnostic_result
+            )
     elif block_obj.number == 2:
-        # Обработка второго блока (выбор предпочтений)
+        # Обрабатываем результаты второго блока (предпочтения)
         responses = [
-            {'choice': cleaned_data[key].split('_')[-1]} 
+            {'choice': cleaned_data[key].split('_')[-1]}
             for key in cleaned_data.keys()
         ]
         preference, counts = determine_preferences(responses)
-        save_progress(user, block_obj.number, (preference, counts))
+        diagnostic_result = DiagnosticResult.objects.create(
+            user=user,
+            block_number=block_obj.number,
+            preference=preference
+        )
+        diagnostic_result.save()
 
 def determine_preferences(responses):
     """
-    Определение предпочитаемых направлений.
+    Анализируем предпочтения пользователя.
     """
     counts = {"a": 0, "б": 0, "в": 0, "г": 0, "д": 0}
     for resp in responses:
@@ -201,3 +215,18 @@ def download_report(request, username):
     response = FileResponse(profile.report_file.open(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename={profile.report_file.name}'
     return response
+
+def select_answers(request, question_id):
+    question = Question.objects.get(id=question_id)
+    if request.method == 'POST':
+        form = MultiAnswerForm(question, request.POST)
+        if form.is_valid():
+            selected_options = form.cleaned_data['options']
+            # Обработаем полученные данные (например, сохраним отметки)
+            for option in selected_options:
+                # Логика сохранения отметок
+                pass
+            return redirect('/success/')
+    else:
+        form = MultiAnswerForm(question)
+    return render(request, 'select_answers.html', {'form': form})

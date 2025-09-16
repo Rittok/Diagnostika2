@@ -28,6 +28,7 @@ class AnswerOption(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     option_text = models.CharField(max_length=255, verbose_name="Вариант ответа")
     is_correct = models.BooleanField(default=False, verbose_name="Правильный ответ?")
+    is_selected = models.BooleanField(default=False)
 
     def __str__(self):
         return self.option_text

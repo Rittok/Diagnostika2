@@ -14,7 +14,7 @@ class PrimaryDiagnosticForm(forms.Form):
             choices = [(opt.id, opt.option_text) for opt in q.options.all()]
             self.fields[field_name] = forms.ChoiceField(
                 label=q.text,
-                widget=forms.RadioSelect(),
+                widget=forms.RadioSelect(attrs={'class': 'custom-control-input'}),
                 choices=choices,
                 required=True
             )
@@ -50,3 +50,11 @@ class TestForm(BaseModelFormSet):
         )
 
 TestFormSet = modelformset_factory(AnswerOption, fields=(), extra=0, can_delete=False, formset=TestForm)
+
+class AnswerOptionForm(forms.ModelForm):
+    class Meta:
+        model = AnswerOption
+        fields = ['question', 'option_text', 'is_selected']
+        widgets = {
+            'is_selected': forms.CheckboxInput(),
+        }
