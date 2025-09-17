@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 
 # Константа: количество вопросов на одну страницу
 QUESTIONS_PER_PAGE = 5
+
 @login_required
 def block1_test_view(request, page=1):
     block_obj = get_object_or_404(Block, number=1)  # Получаем объект первого блока
@@ -53,18 +54,21 @@ def block1_test_view(request, page=1):
 
     # Обрабатываем форму
     if request.method == 'POST':
+        cleaned_data = {}  # Сбор данных из формы
         for key, value in request.POST.items():
-            if key.startswith('question_'):  # Обрабатываем только вопросы
+            if key.startswith('question_'):
                 question_id = int(key.split('_')[1])
-                saved_answers[str(question_id)] = value
-        request.session[f'saved_answers_{block_obj.number}'] = saved_answers
+                cleaned_data[f'question_{question_id}'] = value
 
-        # Переходим на вторую страницу
-        next_page = page + 1
-        if next_page <= total_pages:
-            return redirect(reverse('primary_test:block1_test', args=(next_page,)))
-        else:
+        # Сохраняем результаты
+        process_block_answers(cleaned_data, block_obj, request.user)
+
+        # Завершаем первый блок и переходим на второй
+        if page == total_pages:
             return redirect(reverse('primary_test:block2_test'))
+        else:
+            next_page = page + 1
+            return redirect(reverse('primary_test:block1_test', args=(next_page,)))
 
     context = {
         'prepared_questions': prepared_questions,
@@ -95,11 +99,14 @@ def block2_test_view(request):
 
     # Обрабатываем форму
     if request.method == 'POST':
+        cleaned_data = {}  # Сбор данных из формы
         for key, value in request.POST.items():
             if key.startswith('question_'):
                 question_id = int(key.split('_')[1])
-                saved_answers[str(question_id)] = value
-        request.session[session_key] = saved_answers
+                cleaned_data[f'question_{question_id}'] = value
+
+        # Сохраняем результаты
+        process_block_answers(cleaned_data, block_obj, request.user)
 
         # Переходим на страницу результатов
         return redirect(reverse('primary_test:diagnostic_results'))
@@ -140,14 +147,14 @@ def process_block_answers(cleaned_data, block_obj, user):
     elif block_obj.number == 2:
         # Обрабатываем результаты второго блока (предпочтения)
         responses = [
-            {'choice': cleaned_data[key].split('_')[-1]}
-            for key in cleaned_data.keys()
+            {'choice': cleaned_data[key].split('_')[-1]}  # получаем ID выбранного варианта
+            for key in cleaned_data.keys() if key.startswith('question_')
         ]
-        preference, counts = determine_preferences(responses)
+        recommendation, counts = determine_preferences(responses)
         diagnostic_result = DiagnosticResult.objects.create(
             user=user,
             block_number=block_obj.number,
-            preference=preference
+            preference=recommendation
         )
         diagnostic_result.save()
 
@@ -155,19 +162,29 @@ def determine_preferences(responses):
     """
     Анализируем предпочтения пользователя.
     """
-    counts = {"a": 0, "б": 0, "в": 0, "г": 0, "д": 0}
+    # Собираем ID популярных вариантов ответов
+    popular_options = {}
     for resp in responses:
-        choice = resp["choice"]
-        counts[choice] += 1
-    max_choice = max(counts, key=lambda k: counts[k])
-    preferences_map = {
-        "a": "Кибербезопасность",
-        "б": "Компьютерная графика и дизайн",
-        "в": "Игровая разработка",
-        "г": "Программирование",
-        "д": "Инженерия в IT"
+        choice = resp["choice"]  # ID варианта ответа
+        if choice in popular_options:
+            popular_options[choice] += 1
+        else:
+            popular_options[choice] = 1
+
+    # Найдем самый популярный вариант
+    most_popular_option_id = max(popular_options, key=popular_options.get)
+
+    # Определим категорию на основе популярного варианта
+    categories = {
+        1: "Кибербезопасность",
+        2: "Компьютерная графика и дизайн",
+        3: "Игровая разработка",
+        4: "Программирование",
+        5: "Инженерия в IT"
     }
-    return preferences_map[max_choice], counts
+
+    recommendation = categories.get(int(most_popular_option_id), "Неопределенно")
+    return recommendation, popular_options
 
 def save_progress(user, block_number, results):
     """Сохранение результатов в БД и формирование отчета."""
@@ -193,6 +210,7 @@ def save_progress(user, block_number, results):
     # Генерация отчёта
     generate_pdf_report(user)
 
+@login_required
 def diagnostic_results(request):
     """
     Итоговая страница диагностики.
@@ -238,6 +256,12 @@ def diagnostic_results(request):
     }
     return render(request, 'primary_test/results.html', context)
 
+def calculate_percent_correct(answers):
+    """Расчёт процентного соотношения правильных ответов."""
+    total = len(answers)
+    correct_count = sum([1 for ans in answers if ans.is_correct])
+    return (correct_count / total) * 100 if total > 0 else 0
+
 
 def calculate_percent_correct(answers):
     """Расчёт процентного соотношения правильных ответов."""
@@ -268,3 +292,11 @@ def download_report(request, username):
     response = FileResponse(profile.report_file.open(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename={profile.report_file.name}'
     return response
+
+@login_required
+def reset_session(request):
+    """
+    Очищает сессию перед началом нового теста.
+    """
+    request.session.clear()
+    return redirect(reverse('primary_test:block1_test', args=(1,)))

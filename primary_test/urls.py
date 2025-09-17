@@ -8,4 +8,5 @@ urlpatterns = [
     path('block2/', block2_test_view, name='block2_test'),
     path('results/', diagnostic_results, name='diagnostic_results'),
     path('download-report/<str:username>/', download_report, name='download_report'),
+    path('reset_session/', reset_session, name='reset_session'),
 ]

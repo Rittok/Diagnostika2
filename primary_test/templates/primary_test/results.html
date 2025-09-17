@@ -14,30 +14,6 @@
 
     {% if has_results %}
         <div class="card shadow-sm rounded border-secondary mb-4">
-            <div class="card-header bg-light font-weight-bold">Результаты по блокам</div>
-            <div class="card-body">
-                <table class="table table-hover table-responsive">
-                    <thead class="bg-dark text-white">
-                        <tr>
-                            <th scope="col">Блок</th>
-                            <th scope="col">Процент правильных ответов</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for score in scores %}
-                            <tr>
-                                <td>Блок №{{ score.block_number }}</td>
-                                <td class="{% if 'percent_correct' in score %}{% if score.percent_correct >= 80 %}text-success{% elif score.percent_correct >= 50 %}text-warning{% else %}text-danger{% endif %}{% endif %}">
-                                    {% if 'percent_correct' in score %}{{ score.percent_correct|floatformat:"-2"}}%{% else %}-{% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card shadow-sm rounded border-secondary mb-4">
             <div class="card-header bg-light font-weight-bold">Средний результат по первому блоку</div>
             <div class="card-body">
                 <h2 class="font-weight-bold display-5 text-center">
@@ -54,6 +30,8 @@
                 </h2>
             </div>
         </div>
+
+        <a href="{% url 'primary_test:reset_session' %}" class="btn btn-primary mt-4">Пройти тестирование заново</a>
     {% else %}
         <div class="alert alert-warning mt-4" role="alert">
             Вы ещё не проходили тестирование!<br>
